@@ -16,3 +16,13 @@ test("editor keeps file work in the browser", async () => {
   assert.match(source, /new Blob/);
   assert.doesNotMatch(source, /fetch\(|axios|ChatGPT|D1|cloudflare/i);
 });
+
+test("level controls use the hardware-calibrated ME-1 scale", async () => {
+  const format = await readFile(new URL("../app/me1-format.ts", import.meta.url), "utf8");
+  const editor = await readFile(new URL("../app/ME1Editor.tsx", import.meta.url), "utf8");
+  assert.match(format, /LEVEL_NOMINAL = 106/);
+  assert.match(format, /\[LEVEL_NOMINAL, 0xf662\]/);
+  assert.match(format, /\[LEVEL_MAX, LEVEL_MAX_RAW\]/);
+  assert.match(editor, /range-nominal/);
+  assert.match(editor, /\+10 dB/);
+});

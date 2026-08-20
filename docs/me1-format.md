@@ -29,8 +29,13 @@ not a replacement for them.
 
 ## Encoding decisions
 
-- Level 0 uses `0x8001`. Audible levels use the validated calibration points in
-  `AUDIBLE_LEVEL_POINTS` and quantize to 129 steps.
+- The UI level range is 0..130: 0 is fully off and 1..130 are the 130 audible
+  ME-1 positions. Hardware calibration `1TO16.ME1` establishes `0x8001` as
+  off, `0xce00` as first audible, `0xf662` as nominal 0 dB, and `0xff9f` as
+  maximum (+10 dB). It also establishes `0xf4da` and `0xf727` as the encoder
+  positions immediately below and above nominal. The writer uses these exact
+  anchors and device-step interpolation between them; imported unchanged bytes
+  are still preserved verbatim.
 - Pan maps the UI range `-100..100` to the device range `0..74` using center 37.
 - On import, the original first-4096-byte buffer is retained. On export, only
   changed fields are rewritten so unknown bytes survive round-trips.
