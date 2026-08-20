@@ -21,31 +21,37 @@ const KEY_SIZE = 205;
 const LEVEL_OFFSET = 194;
 const NAME_OFFSET = 197;
 const LEVEL_OFF = 0x8001;
-const AUDIBLE_LEVEL_POINTS = [[1, 0xce00], [25, 0xd862], [50, 0xe4b1], [75, 0xf2ec], [100, 0xff9f]] as const;
-const AUDIBLE_STEPS = 129;
+const LEVEL_FIRST_AUDIBLE = 0xce00;
+const LEVEL_MAX_RAW = 0xff9f;
+export const LEVEL_MAX = 130;
+export const LEVEL_NOMINAL = 106;
+const LEVEL_CALIBRATION = new Map<number, number>([
+  [1, LEVEL_FIRST_AUDIBLE],
+  [102, 0xf4da], // one ME-1 encoder click below the nominal marker
+  [LEVEL_NOMINAL, 0xf662],
+  [108, 0xf727], // one ME-1 encoder click above the nominal marker
+  [LEVEL_MAX, LEVEL_MAX_RAW],
+]);
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
-function interpolate(value: number, points: readonly (readonly [number, number])[], reverse = false) {
-  const pairs = reverse ? points.map(([x, y]) => [y, x] as const) : points;
-  const v = clamp(value, pairs[0][0], pairs[pairs.length - 1][0]);
-  for (let i = 1; i < pairs.length; i++) {
-    const [x1, y1] = pairs[i - 1]; const [x2, y2] = pairs[i];
-    if (v <= x2) return y1 + ((v - x1) / (x2 - x1)) * (y2 - y1);
-  }
-  return pairs[pairs.length - 1][1];
-}
-const decodeLevel = (raw: number) => raw < AUDIBLE_LEVEL_POINTS[0][1] ? 0 : Math.round(interpolate(raw, AUDIBLE_LEVEL_POINTS, true));
-const encodeLevel = (level: number) => {
-  const value = clamp(Math.round(level), 0, 100);
+const rawForLevel = (level: number) => {
+  const value = clamp(Math.round(level), 0, LEVEL_MAX);
   if (value === 0) return LEVEL_OFF;
-  const exact = AUDIBLE_LEVEL_POINTS.find(([percent]) => percent === value);
-  if (exact) return exact[1];
-  const raw = interpolate(value, AUDIBLE_LEVEL_POINTS);
-  const minimum = AUDIBLE_LEVEL_POINTS[0][1];
-  const maximum = AUDIBLE_LEVEL_POINTS[AUDIBLE_LEVEL_POINTS.length - 1][1];
-  const step = Math.round(((raw - minimum) * AUDIBLE_STEPS) / (maximum - minimum));
-  return Math.round(minimum + (step * (maximum - minimum)) / AUDIBLE_STEPS);
+  const calibrated = LEVEL_CALIBRATION.get(value);
+  if (calibrated !== undefined) return calibrated;
+  return Math.round(LEVEL_FIRST_AUDIBLE + ((value - 1) * (LEVEL_MAX_RAW - LEVEL_FIRST_AUDIBLE)) / (LEVEL_MAX - 1));
 };
+const decodeLevel = (raw: number) => {
+  if (raw < LEVEL_FIRST_AUDIBLE) return 0;
+  let nearest = 1;
+  let distance = Number.POSITIVE_INFINITY;
+  for (let level = 1; level <= LEVEL_MAX; level++) {
+    const nextDistance = Math.abs(rawForLevel(level) - raw);
+    if (nextDistance < distance) { nearest = level; distance = nextDistance; }
+  }
+  return nearest;
+};
+const encodeLevel = rawForLevel;
 const decodePan = (raw: number) => clamp(Math.round(((raw - 37) / 37) * 100), -100, 100);
 const encodePan = (pan: number) => clamp(Math.round(37 + (pan / 100) * 37), 0, 74);
 const read16 = (b: Uint8Array, o: number) => (b[o] << 8) | b[o + 1];
@@ -64,7 +70,7 @@ export const blankPreset = (): EditorPreset => {
   return {
     ...preset,
     name: "NEWMIX",
-    assignments: Array.from({ length: 16 }, (_, i) => ({ kind: "input" as const, source: i + 1, level: 50, pan: 0, muted: false })),
+    assignments: Array.from({ length: 16 }, (_, i) => ({ kind: "input" as const, source: i + 1, level: LEVEL_NOMINAL, pan: 0, muted: false })),
     keyNames: Array.from({ length: 16 }, () => ({ mode: "console" as const, customName: "" })),
     formatStatus: "template",
   };
