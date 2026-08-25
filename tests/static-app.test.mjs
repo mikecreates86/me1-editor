@@ -26,3 +26,13 @@ test("level controls use the hardware-calibrated ME-1 scale", async () => {
   assert.match(editor, /range-nominal/);
   assert.match(editor, /\+10 dB/);
 });
+
+test("configuration maps Preset 1 to the current mix and retains Presets 2 through 16", async () => {
+  const format = await readFile(new URL("../app/me1-format.ts", import.meta.url), "utf8");
+  const editor = await readFile(new URL("../app/ME1Editor.tsx", import.meta.url), "utf8");
+  assert.match(format, /slots: Array\.from\(\{ length: 15 \}/);
+  assert.match(format, /current\.name = "PRESET1"/);
+  assert.match(format, /for \(let index = 0; index < 15; index\+\+\)/);
+  assert.match(editor, /Preset 1 \/ configuration name/);
+  assert.match(editor, /Build or edit Presets 2–16 below/);
+});
