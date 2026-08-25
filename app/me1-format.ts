@@ -15,8 +15,24 @@ export type EditorPreset = {
   original?: { assignments: Assignment[]; keyNames: KeyName[] };
   formatStatus: "template" | "decoded-me1";
 };
+export type Configuration = {
+  /** The ME-1 internal configuration name, which is also Preset 1's name. */
+  name: string;
+  /** The computer/USB filename. This does not change the ME-1 internal name. */
+  exportName: string;
+  current: EditorPreset;
+  /** Presets 2–16. The ME-1 current-mix block is Preset 1. */
+  slots: (EditorPreset | null)[];
+  slotNames: string[];
+  /** The complete device file, retained so console-specific bytes survive imports. */
+  sourceBytes?: Uint8Array;
+};
 
 const KEY_START = 7;
+export const PRESET_SIZE = 4096;
+export const CONFIG_SIZE = 73728;
+const CONFIG_DIRECTORY_OFFSET = PRESET_SIZE;
+const CONFIG_SLOT_OFFSET = PRESET_SIZE * 2;
 const KEY_SIZE = 205;
 const LEVEL_OFFSET = 194;
 const NAME_OFFSET = 197;
@@ -106,6 +122,66 @@ export function parseME1(fileName: string, bytes: Uint8Array): EditorPreset {
   const cloneAssignments = JSON.parse(JSON.stringify(assignments)) as Assignment[];
   const cloneNames = JSON.parse(JSON.stringify(keyNames)) as KeyName[];
   return { name: fileName.replace(/\.me1$/i, "").slice(0, 8).toUpperCase(), assignments, keyNames, sourceFile: { name: fileName, bytes: data, sourceKind }, original: { assignments: cloneAssignments, keyNames: cloneNames }, formatStatus: "decoded-me1" };
+}
+
+const allFF = (bytes: Uint8Array) => bytes.every((byte) => byte === 0xff);
+const cleanConfigName = (name: string) => name.toUpperCase().replace(/[^A-Z0-9_]/g, "").slice(0, 8) || "NEWCONF";
+const fixedText = (bytes: Uint8Array, offset: number, value: string, length = 8) => {
+  const text = value.padEnd(length, " ").slice(0, length);
+  for (let i = 0; i < length; i++) bytes[offset + i] = text.charCodeAt(i);
+};
+const readFixedText = (bytes: Uint8Array, offset: number, length = 8) => new TextDecoder().decode(bytes.slice(offset, offset + length)).replace(/\0/g, "").trim();
+
+/** Decode Preset 1 plus Presets 2–16 in a 72 KB mixer configuration. */
+export function parseConfiguration(fileName: string, bytes: Uint8Array): Configuration {
+  if (bytes.byteLength !== CONFIG_SIZE) throw new Error("ME-1 configurations must be exactly 72 KB.");
+  const sourceBytes = bytes.slice();
+  const directory = sourceBytes.slice(CONFIG_DIRECTORY_OFFSET, CONFIG_DIRECTORY_OFFSET + PRESET_SIZE);
+  const name = cleanConfigName(readFixedText(directory, 1) || fileName.replace(/\.me1$/i, ""));
+  const slotNames = Array.from({ length: 15 }, (_, index) => readFixedText(directory, 11 + index * 10));
+  const slots = Array.from({ length: 15 }, (_, index) => {
+    const offset = CONFIG_SLOT_OFFSET + index * PRESET_SIZE;
+    const block = sourceBytes.slice(offset, offset + PRESET_SIZE);
+    return allFF(block) ? null : parseME1(slotNames[index] || `P${index + 2}`, block);
+  });
+  const current = parseME1(name, sourceBytes);
+  current.name = name;
+  return { name, exportName: cleanConfigName(fileName.replace(/\.me1$/i, "")), current, slots, slotNames, sourceBytes };
+}
+
+/** Create a complete 72 KB configuration with Preset 1 plus empty Presets 2–16. */
+export function blankConfiguration(): Configuration {
+  const current = blankPreset(); current.name = "PRESET1";
+  return { name: "PRESET1", exportName: "NEWCONF", current, slots: Array.from({ length: 15 }, () => null), slotNames: Array.from({ length: 15 }, (_, index) => `P${index + 2}`) };
+}
+
+/** Write a complete device configuration: Preset 1/current state and Presets 2–16. */
+export function writeConfiguration(configuration: Configuration): Uint8Array {
+  const bytes = configuration.sourceBytes?.slice() ?? new Uint8Array(CONFIG_SIZE).fill(0xff);
+  if (bytes.byteLength !== CONFIG_SIZE) throw new Error("ME-1 configurations must be exactly 72 KB.");
+  bytes.set(writeME1(configuration.current), 0);
+  const directory = bytes.slice(CONFIG_DIRECTORY_OFFSET, CONFIG_DIRECTORY_OFFSET + PRESET_SIZE);
+  if (!configuration.sourceBytes) directory.fill(0);
+  directory[0] = 0x01;
+  fixedText(directory, 1, cleanConfigName(configuration.name));
+  for (let index = 0; index < 15; index++) {
+    const slot = configuration.slots[index];
+    const nameOffset = 11 + index * 10;
+    const slotOffset = CONFIG_SLOT_OFFSET + index * PRESET_SIZE;
+    if (!configuration.sourceBytes) {
+      directory[nameOffset - 2] = 0x02;
+      directory[nameOffset - 1] = 0x01;
+    }
+    if (slot) {
+      fixedText(directory, nameOffset, cleanConfigName(slot.name));
+      bytes.set(writeME1(slot), slotOffset);
+    } else {
+      if (!configuration.sourceBytes) fixedText(directory, nameOffset, configuration.slotNames[index] ?? `P${index + 2}`);
+      bytes.fill(0xff, slotOffset, slotOffset + PRESET_SIZE);
+    }
+  }
+  bytes.set(directory, CONFIG_DIRECTORY_OFFSET);
+  return bytes;
 }
 
 export function writeME1(preset: EditorPreset): Uint8Array {
