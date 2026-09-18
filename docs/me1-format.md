@@ -44,5 +44,5 @@ not a replacement for them.
 
 Any format change must preserve 4096-byte output, 16 keys, 40 sources, and
 unknown-byte preservation. Validate against both preset and configuration
-fixtures and add focused round-trip tests before relying on the current stale
-starter test.
+fixtures and add focused executable round-trip tests; the active static smoke
+test is not sufficient format coverage.

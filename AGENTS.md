@@ -1,11 +1,13 @@
 # AGENTS.md
 
-Operational guidance for AI coding agents working in this repository. Keep
-project background and product history in [`README_AI.md`](README_AI.md).
+Operational guidance for AI coding agents working in this repository. Read
+[`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) for the authoritative project
+handoff and [`README_AI.md`](README_AI.md) for a shorter orientation.
 
 ## Before editing
 
-- Read [`README_AI.md`](README_AI.md), [`package.json`](package.json), and the
+- Read [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md),
+  [`README_AI.md`](README_AI.md), [`package.json`](package.json), and the
   relevant files under [`app/`](app/).
 - Treat the ME-1 binary format as compatibility-sensitive. Understand the
   parser/writer changes in [`app/me1-format.ts`](app/me1-format.ts) before
@@ -46,6 +48,11 @@ If a command is unavailable, verify dependencies are installed before changing
 configuration. Report failures accurately; do not claim a successful build or
 test run without output.
 
+For a clean clone or CI environment, use `npm ci` so dependencies match
+`package-lock.json`. No secret, database, service account, or Mac-specific path
+is required to install, lint, build, or run the automated tests. GitHub Actions
+runs the same lint and test checks on pushes and pull requests to `main`.
+
 ## Coding conventions
 
 - TypeScript/TSX with strict type checking and ES modules; keep public types
@@ -59,6 +66,10 @@ test run without output.
   or application-specific test framework configured.
 - Prefer small, focused changes. Do not reformat large files or rewrite the
   embedded binary strings as part of unrelated work.
+- Do not combine feature work with dependency upgrades, scaffold cleanup, or
+  broad refactoring. Put each risk-bearing change in its own reviewable commit.
+- Keep `main` production-ready. Use a focused branch for development and merge
+  only after the relevant automated and manual checks pass.
 
 ## Files/data to protect
 
@@ -99,3 +110,7 @@ After code changes:
 4. For UI changes, run `npm run dev` and manually verify import, edit, draft
    export, `.ME1` export, group editing, mute, and responsive layout as relevant.
 5. Summarize commands run and any environment or pre-existing failures.
+
+Automated checks establish source and build health, but they do not prove ME-1
+hardware compatibility. Changes to binary behavior or USB copying require
+final validation in a real browser and on ME-1 hardware as relevant.

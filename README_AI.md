@@ -1,12 +1,17 @@
-# AI Session Notes
+# AI session entry point
+
+The authoritative cold-handoff document is
+[`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md). Read it first, then
+[`AGENTS.md`](AGENTS.md). This file is a shorter orientation, not the complete
+status record.
 
 ## Purpose
 
 ME Preset Lab is a browser-only editor for Allen & Heath ME-1 personal-mixer
-preset files. It lets a user create or import a `.ME1`, edit 16 keys, levels,
-pan, mute state, groups, and key names, then export a hardware-compatible 4 KB
-preset. `Copy to ME-1 USB.command` copies an exported preset to a mounted ME1
-USB drive and verifies/ejects it.
+preset and configuration files. It edits 16 keys, levels, pan, mute state,
+groups, key names, 16-preset configurations, and editor-only source labels.
+`Copy to ME-1 USB.command` copies a 4 KB preset to a mounted ME1 USB drive and
+verifies/ejects it.
 
 ## Current architecture
 
@@ -40,9 +45,9 @@ Prerequisite: Node.js `>=22.13.0`.
 
 ```bash
 npm install
-npm run dev       # local Vinext/Cloudflare development server
+npm run dev       # local Vite development server
 npm run build     # production build
-npm test          # build, then run tests/rendered-html.test.mjs
+npm test          # build, then run tests/static-app.test.mjs
 npm run lint
 npm run db:generate
 ```
@@ -70,12 +75,12 @@ files remain only as inactive legacy scaffold files.
 
 ## Known problems / verification gaps
 
-- [`tests/rendered-html.test.mjs`](tests/rendered-html.test.mjs) still asserts
-  the original generic loading-skeleton starter (including files and a
-  dependency no longer present); it does not test the ME-1 editor and is
-  expected to fail or be obsolete after a successful build.
-- Build/test status is currently unverified because the local `vinext` command
-  was missing during review.
+- [`tests/rendered-html.test.mjs`](tests/rendered-html.test.mjs) asserts the
+  original generic loading-skeleton starter. It is obsolete and excluded from
+  the active test command.
+- As of 2026-09-17, `npm run lint`, `npm run build`, and `npm test` pass.
+  The active tests are smoke tests, not comprehensive binary round-trip
+  coverage.
 - There are no focused unit tests for `parseME1`, `writeME1`, round-tripping,
   or hardware compatibility. The checked-in fixtures are available for adding
   those tests.
