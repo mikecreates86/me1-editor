@@ -92,6 +92,8 @@ export const blankPreset = (): EditorPreset => {
   };
 };
 
+const presetNameFromFile = (fileName: string) => fileName.replace(/\.me1$/i, "").slice(0, 8).toUpperCase();
+
 export function parseME1(fileName: string, bytes: Uint8Array): EditorPreset {
   if (bytes.byteLength !== 4096 && bytes.byteLength !== 73728) throw new Error("ME-1 files must be exactly 4 KB (preset) or 72 KB (configuration).");
   const sourceKind = bytes.byteLength === 4096 ? "preset" : "config";
@@ -121,9 +123,10 @@ export function parseME1(fileName: string, bytes: Uint8Array): EditorPreset {
   }
   const cloneAssignments = JSON.parse(JSON.stringify(assignments)) as Assignment[];
   const cloneNames = JSON.parse(JSON.stringify(keyNames)) as KeyName[];
-  return { name: fileName.replace(/\.me1$/i, "").slice(0, 8).toUpperCase(), assignments, keyNames, sourceFile: { name: fileName, bytes: data, sourceKind }, original: { assignments: cloneAssignments, keyNames: cloneNames }, formatStatus: "decoded-me1" };
+  return { name: presetNameFromFile(fileName), assignments, keyNames, sourceFile: { name: fileName, bytes: data, sourceKind }, original: { assignments: cloneAssignments, keyNames: cloneNames }, formatStatus: "decoded-me1" };
 }
 
+const defaultSlotName = (index: number) => `P${index + 2}`;
 const allFF = (bytes: Uint8Array) => bytes.every((byte) => byte === 0xff);
 const cleanConfigName = (name: string) => name.toUpperCase().replace(/[^A-Z0-9_]/g, "").slice(0, 8) || "NEWCONF";
 const fixedText = (bytes: Uint8Array, offset: number, value: string, length = 8) => {
@@ -131,6 +134,8 @@ const fixedText = (bytes: Uint8Array, offset: number, value: string, length = 8)
   for (let i = 0; i < length; i++) bytes[offset + i] = text.charCodeAt(i);
 };
 const readFixedText = (bytes: Uint8Array, offset: number, length = 8) => new TextDecoder().decode(bytes.slice(offset, offset + length)).replace(/\0/g, "").trim();
+/** Directory names may hold characters the editor does not (spaces, blanks); keep them unless the name really changed. */
+const directoryNameUnchanged = (original: string, next: string) => Boolean(original) && cleanConfigName(original) === cleanConfigName(next);
 
 /** Decode Preset 1 plus Presets 2–16 in a 72 KB mixer configuration. */
 export function parseConfiguration(fileName: string, bytes: Uint8Array): Configuration {
@@ -142,7 +147,7 @@ export function parseConfiguration(fileName: string, bytes: Uint8Array): Configu
   const slots = Array.from({ length: 15 }, (_, index) => {
     const offset = CONFIG_SLOT_OFFSET + index * PRESET_SIZE;
     const block = sourceBytes.slice(offset, offset + PRESET_SIZE);
-    return allFF(block) ? null : parseME1(slotNames[index] || `P${index + 2}`, block);
+    return allFF(block) ? null : parseME1(slotNames[index] || defaultSlotName(index), block);
   });
   const current = parseME1(name, sourceBytes);
   current.name = name;
@@ -161,9 +166,10 @@ export function writeConfiguration(configuration: Configuration): Uint8Array {
   if (bytes.byteLength !== CONFIG_SIZE) throw new Error("ME-1 configurations must be exactly 72 KB.");
   bytes.set(writeME1(configuration.current), 0);
   const directory = bytes.slice(CONFIG_DIRECTORY_OFFSET, CONFIG_DIRECTORY_OFFSET + PRESET_SIZE);
+  const sourceDirectory = configuration.sourceBytes && directory.slice();
   if (!configuration.sourceBytes) directory.fill(0);
   directory[0] = 0x01;
-  fixedText(directory, 1, cleanConfigName(configuration.name));
+  if (!sourceDirectory || !directoryNameUnchanged(readFixedText(sourceDirectory, 1), configuration.name)) fixedText(directory, 1, cleanConfigName(configuration.name));
   for (let index = 0; index < 15; index++) {
     const slot = configuration.slots[index];
     const nameOffset = 11 + index * 10;
@@ -173,10 +179,11 @@ export function writeConfiguration(configuration: Configuration): Uint8Array {
       directory[nameOffset - 1] = 0x01;
     }
     if (slot) {
-      fixedText(directory, nameOffset, cleanConfigName(slot.name));
+      const originalName = sourceDirectory ? readFixedText(sourceDirectory, nameOffset) || defaultSlotName(index) : "";
+      if (!directoryNameUnchanged(originalName, slot.name)) fixedText(directory, nameOffset, cleanConfigName(slot.name));
       bytes.set(writeME1(slot), slotOffset);
     } else {
-      if (!configuration.sourceBytes) fixedText(directory, nameOffset, configuration.slotNames[index] ?? `P${index + 2}`);
+      if (!configuration.sourceBytes) fixedText(directory, nameOffset, configuration.slotNames[index] ?? defaultSlotName(index));
       bytes.fill(0xff, slotOffset, slotOffset + PRESET_SIZE);
     }
   }

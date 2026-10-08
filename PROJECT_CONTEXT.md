@@ -49,8 +49,9 @@ normal build and test commands pass.
 
 ### Partial or outstanding
 
-- Smoke tests check build shape and selected source-code invariants. They are
-  not executable parser/writer round-trip tests.
+- `tests/me1-format.test.mjs` (added 2026-10-08) runs the format module
+  against every fixture: byte-identical no-op round trips, decoded calibration
+  captures, level/pan ranges, assignment kinds, and edit isolation.
 - Real hardware compatibility was not reverified during this audit.
 - The app exports `.me1draft.json` files but cannot import them.
 - There is no automated browser interaction test or current recorded manual
@@ -157,8 +158,8 @@ when its entire block is `0xff`. `writeConfiguration()` overlays saved
 presets and directory names on imported bytes, or initializes a new file.
 
 Slot edits are copied into the configuration only when the operator chooses
-`SAVE & RETURN`. While editing a slot, `EXPORT CONFIG` exports the last saved
-configuration state, so unsaved edits are omitted.
+`SAVE & RETURN`. If a slot has unsaved edits, `EXPORT CONFIG` asks to save
+them into the configuration first; cancelling aborts the export.
 
 ### Source-name and draft formats
 
@@ -298,9 +299,13 @@ Not verified in this audit:
 
 - Binary compatibility is reverse engineered and safety sensitive. A plausible
   UI result does not prove hardware validity.
-- Tests inspect source patterns and build output but do not execute format code
-  against fixtures.
-- Unsaved configuration-slot edits can be omitted from configuration export.
+- Fixture tests prove byte-level behavior against reference files, not that
+  the ME-1 accepts the output.
+- Open question: directory byte `10 + 10*i` (just before each slot name) is
+  `0x01` for exactly the occupied slots in `ME.ME1` and `OFFICIAL.ME1`, but
+  `EMMAUS.ME1` has occupied slots with `0x00`. The writer leaves it untouched
+  for imported files and sets `0x01` for every slot, empty or not, in new
+  configurations. Whether the ME-1 reads it is unverified on hardware.
 - Draft export has no matching import.
 - Friendly source names live only in React state unless explicitly saved.
 - There is no autosave, undo history, or confirmation before starting a new
@@ -314,19 +319,17 @@ Not verified in this audit:
 - Have brand-new 72 KB configurations loaded successfully on hardware?
 - Is Preset 1/current-mix behavior confirmed across supported firmware?
 - Is draft import wanted, or is draft export intentionally archival?
-- Should export be blocked or prompt when a slot has unsaved edits?
+- Does the ME-1 use the directory slot flag byte (see `docs/me1-format.md`)?
 - What is the current Vercel project URL and deployment status?
 - Can inactive starter files be deleted after a focused cleanup review?
 
 ## 13. Prioritized next steps
 
-1. Add fixture-based executable tests for `parseME1`, `writeME1`,
-   `parseConfiguration`, and `writeConfiguration`. Cover both sizes, no-op
-   byte equality, output size, every assignment type, calibrated levels, names,
-   groups, and unknown-byte preservation.
+1. Done 2026-10-08: fixture-based tests in `tests/me1-format.test.mjs`.
 2. Run controlled hardware validation using copies of fixtures. Record device,
    firmware, procedure, outcomes, and hashes of exported artifacts.
-3. Prevent accidental loss of unsaved slot edits during export/navigation.
+3. Export now guards unsaved slot edits. NEW MIX, NEW CONFIG, and OPEN still
+   discard work without confirmation.
 4. Add draft import if resumable editing is required.
 5. Record a desktop and phone-width manual UI pass across all relevant flows.
 6. Verify Vercel settings and the public deployment.
@@ -338,7 +341,7 @@ Not verified in this audit:
   evidence.
 - Run `git status` first and preserve unrelated changes.
 - After code changes run `npm run lint`, `npm run build`, and `npm test`.
-- Add fixture tests with any binary change; the smoke suite is insufficient.
+- Extend `tests/me1-format.test.mjs` with any binary change.
 - Do not claim hardware compatibility without a recorded physical-device test.
 - Information unavailable from repository files or Git history is listed as an
   open question rather than presented as fact.
