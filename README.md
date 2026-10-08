@@ -16,16 +16,18 @@ For project history, constraints, verified status, risks, and next steps, read
 ## Run locally
 
 ```bash
-npm ci
-npm run dev
-npm run build
-npm test
-npm run lint
+npm ci             # install exact dependency versions
+npm run dev        # start a local development server
+npm run build      # production build into dist/
+npm test           # build, then run the automated tests
+npm run lint       # code style and common-mistake checks
+npm run typecheck  # TypeScript type checks
 ```
 
-The active application is static React/Vite. File parsing and downloads stay in
-the browser. The repository contains inactive Vinext, Next.js, Cloudflare, D1,
-and auth starter files; they are not part of the deployed application.
+The application is static React/Vite. File parsing and downloads stay in the
+browser; there is no server, database, or account.
+
+New to the GitHub workflow used here? See [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Important safety rules
 
@@ -40,5 +42,5 @@ and auth starter files; they are not part of the deployed application.
 Build with `npm run build` and publish `dist/` as a static site. No backend
 service or credentials are required by the app.
 
-GitHub Actions runs lint and the active build/test suite for pushes and pull
-requests to `main`. A clean clone contains everything needed for those checks.
+GitHub Actions runs lint, typecheck, and the build/test suite for pushes and
+pull requests to `main`. A clean clone contains everything needed for those checks.

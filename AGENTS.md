@@ -16,15 +16,12 @@ handoff and [`README_AI.md`](README_AI.md) for a shorter orientation.
 
 ## Repository layout
 
-- `app/`: active React UI, CSS, format implementation, and optional auth helper.
+- `app/`: React UI, CSS, and format implementation.
 - `index.html`, `app/static-main.tsx`, `vite.config.ts`: authoritative static
   Vite entry and Vercel build configuration.
-- `worker/`, `.openai/hosting.json`: retained inactive starter scaffold; do not
-  reintroduce it into the deployed path.
 - `Configs/`: binary ME-1 reference/configuration/preset fixtures.
-- `tests/static-app.test.mjs`: current static-build smoke tests. The older
-  `tests/rendered-html.test.mjs` is obsolete starter coverage.
-- `db/`, `examples/d1/`, `drizzle/`: inactive D1/Drizzle starter scaffolding.
+- `tests/static-app.test.mjs`: static-build smoke tests.
+- `tests/me1-format.test.mjs`: fixture-based format round-trip tests.
 - `public/`: static assets.
 - `docs/`: focused durable technical notes; start with `docs/README.md`.
 
@@ -40,14 +37,11 @@ npm run preview
 npm test
 npm run lint
 npm run typecheck
-npm run db:generate
 ```
 
 `npm test` runs the static Vite build first, then `tests/static-app.test.mjs`
 and `tests/me1-format.test.mjs` (fixture-based format round trips).
-`npm run typecheck` runs `tsc` over the deployed entry graph only; Vite does not
-typecheck.
-`npm run db:generate` is only relevant when intentionally adding D1 schema.
+`npm run typecheck` runs `tsc` over the project; Vite does not typecheck.
 If a command is unavailable, verify dependencies are installed before changing
 configuration. Report failures accurately; do not claim a successful build or
 test run without output.
@@ -55,7 +49,8 @@ test run without output.
 For a clean clone or CI environment, use `npm ci` so dependencies match
 `package-lock.json`. No secret, database, service account, or Mac-specific path
 is required to install, lint, build, or run the automated tests. GitHub Actions
-runs the same lint and test checks on pushes and pull requests to `main`.
+runs the same lint, typecheck, and test checks on pushes and pull requests to
+`main`.
 
 ## Coding conventions
 
@@ -80,13 +75,10 @@ runs the same lint and test checks on pushes and pull requests to `main`.
 - Do not modify `Configs/**/*.ME1` or the base64 constants in
   `app/me1-template.ts` unless the task is explicitly about fixture/template
   bytes and the change is validated against hardware/reference data.
-- Do not commit generated or local state: `node_modules/`, `.next/`, `.vinext/`,
-  `dist/`, `.wrangler/`, `outputs/`, `work/`, `.env*`, or `.DS_Store`.
-- Do not turn on D1/R2, add auth, or wire the D1 example merely to complete an
-  unrelated editor task. Those are currently inactive scaffolding paths.
-- Keep the deployed path static: do not import `worker/`, `db/`,
-  `app/chatgpt-auth.ts`, `@openai/sites-vite-plugin`, or Cloudflare bindings
-  from the Vite entry.
+- Do not commit generated or local state: `node_modules/`, `dist/`,
+  `outputs/`, `work/`, `.env*`, or `.DS_Store`.
+- Keep the app static and browser-only: do not add a server, database, auth, or
+  cloud bindings unless the task is explicitly about that migration.
 - Preserve the macOS-only behavior and safety checks in
   `Copy to ME-1 USB.command`; changes to USB copying must retain filename,
   4 KB-size, byte-for-byte verification, and eject safeguards.
@@ -95,7 +87,8 @@ runs the same lint and test checks on pushes and pull requests to `main`.
 
 - Accepted input sizes are exactly 4096 or 73728 bytes; configuration imports
   are edited from their first 4096 bytes.
-- Exports must remain 4096 bytes. Preserve unknown bytes from imported files.
+- Preset exports must remain 4096 bytes and configuration exports 73728 bytes.
+  Preserve unknown bytes from imported files.
 - Keep the 16-key/40-source model, fixed offsets, and level/pan encoding unless
   the task explicitly changes the format contract.
 - Read [`docs/me1-format.md`](docs/me1-format.md) for the authoritative

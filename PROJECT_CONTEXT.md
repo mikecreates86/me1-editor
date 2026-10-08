@@ -56,8 +56,8 @@ normal build and test commands pass.
 - The app exports `.me1draft.json` files but cannot import them.
 - There is no automated browser interaction test or current recorded manual
   test of every editing flow.
-- Legacy Vinext/Next, Cloudflare, D1, Drizzle, and ChatGPT-auth starter files
-  remain in the repository but are inactive.
+- The Vinext/Next, Cloudflare, D1, Drizzle, and ChatGPT-auth starter scaffold
+  was removed on 2026-10-08.
 
 ### Where work stopped
 
@@ -79,8 +79,8 @@ test suite before format changes or production use.
 - Do not edit `Configs/**/*.ME1` or base64 constants in
   `app/me1-template.ts` without an explicit byte-level task and validation
   against hardware/reference data.
-- Keep the deployed app static and browser-only. Do not connect the inactive
-  worker, database, auth, or cloud bindings unless intentionally migrating.
+- Keep the deployed app static and browser-only. Do not add a server,
+  database, auth, or cloud bindings unless intentionally migrating.
 - Preserve accessible labels and native controls when changing the UI.
 - Preserve the USB helper's filename validation, 4 KB size check,
   byte-for-byte verification, metadata cleanup, and safe-eject behavior.
@@ -103,8 +103,8 @@ These are preferences, not binary format requirements:
 
 ### Firm decisions
 
-- Static Vite is authoritative. Vinext/Next/Cloudflare files are inactive
-  history and must not enter the deployed path.
+- Static Vite is authoritative. The old Vinext/Next/Cloudflare scaffold was
+  removed and should not be reintroduced.
 - Parsing, editing, and download happen locally in the browser. There is no
   runtime API, database, authentication, telemetry, or server persistence.
 - Preset 1 in a configuration is the 4 KB current-mix block at offset 0.
@@ -118,8 +118,6 @@ These are preferences, not binary format requirements:
 
 - The single-component React UI keeps state local. Add shared state machinery
   only for a concrete need.
-- Legacy scaffold files remain to avoid unrelated cleanup risk. Remove them
-  only in a dedicated, verified cleanup.
 - The visual design intentionally resembles the ME-1 control surface and uses
   the existing handwritten CSS approach.
 
@@ -220,7 +218,7 @@ normal authenticated tools.
 - Level: 0 to 130; nominal 0 dB is 106; maximum is +10 dB.
 - Pan: -100 to 100; device range 0 to 74, center 37.
 - Active test: `tests/static-app.test.mjs`.
-- Obsolete history: `tests/rendered-html.test.mjs`.
+- Format tests: `tests/me1-format.test.mjs`.
 
 ## 8. Project file map
 
@@ -238,13 +236,9 @@ normal authenticated tools.
 - `Configs/`: protected fixtures. `Emmaus/ME1PST` contains 34 4 KB presets;
   the full tree contains three 72 KB configurations.
 - `Copy to ME-1 USB.command`: protected macOS USB helper.
-- `public/favicon.svg`: active favicon. Other starter SVGs and
-  `me1top.webp` are unused by the static entry.
-- `app/page.tsx`, `app/layout.tsx`, `app/chatgpt-auth.ts`, `worker/`,
-  `db/`, `examples/d1/`, `drizzle/`, `next.config.ts`, and
-  `.openai/hosting.json`: inactive scaffold. Do not import into active code.
-- `node_modules/`, `dist/`, `.next/`, `.vinext/`, `outputs/`, and
-  `work/`: generated/local-only state, ignored by Git.
+- `public/favicon.svg`: active favicon. `me1top.webp` is unused by the app.
+- `node_modules/`, `dist/`, `outputs/`, and `work/`: generated/local-only
+  state, ignored by Git.
 
 ## 9. Testing and verified findings
 
@@ -288,12 +282,10 @@ Not verified in this audit:
 
 - The repository began as a Vinext/Cloudflare full-stack starter. The active
   product moved to static Vite.
-- `tests/rendered-html.test.mjs` targets a deleted loading skeleton, server
-  output, and a removed dependency. It is excluded from `npm test`.
+- The starter scaffold, including the obsolete `tests/rendered-html.test.mjs`,
+  was removed on 2026-10-08.
 - Early notes reported a missing `vinext` command and broken dependencies.
   That is stale: the current Vite build, lint, and tests pass.
-- D1 examples, ChatGPT auth, image optimization, Worker code, and Sites
-  bindings are unused remnants. Do not revive them for ordinary editor work.
 
 ## 11. Known issues and risks
 
@@ -310,7 +302,6 @@ Not verified in this audit:
 - Friendly source names live only in React state unless explicitly saved.
 - There is no autosave, undo history, or confirmation before starting a new
   file or discarding a slot edit.
-- Inactive scaffold can mislead tools toward Next.js, Cloudflare, or databases.
 - Firmware compatibility and earlier physical validation details are unknown.
 
 ## 12. Open questions
@@ -321,7 +312,6 @@ Not verified in this audit:
 - Is draft import wanted, or is draft export intentionally archival?
 - Does the ME-1 use the directory slot flag byte (see `docs/me1-format.md`)?
 - What is the current Vercel project URL and deployment status?
-- Can inactive starter files be deleted after a focused cleanup review?
 
 ## 13. Prioritized next steps
 
@@ -333,7 +323,7 @@ Not verified in this audit:
 4. Add draft import if resumable editing is required.
 5. Record a desktop and phone-width manual UI pass across all relevant flows.
 6. Verify Vercel settings and the public deployment.
-7. Consider removing inactive scaffold in a separate verified change.
+7. Done 2026-10-08: inactive scaffold removed.
 
 ## 14. Handoff notes
 
