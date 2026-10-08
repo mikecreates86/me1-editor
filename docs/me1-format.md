@@ -17,6 +17,23 @@ not a replacement for them.
 - Key level is a big-endian 16-bit value at record offset 194. Key pan is at
   offset 196. The six-character custom name begins at offset 197.
 
+## Configuration layout (72 KB)
+
+- Block 0 (`0..4095`) is Preset 1, the current mix, in the 4 KB preset format.
+- Block 1 (`4096..8191`) is the directory: byte 0 is `0x01`, bytes 1..8 are
+  the configuration/Preset 1 name, then 15 ten-byte entries starting at byte 9
+  (`0x02`, a flag byte, and an 8-byte space-padded name) for Presets 2..16.
+- Blocks 2..16 hold Presets 2..16. A slot whose whole block is `0xff` is empty.
+  The final 4 KB block is not interpreted and is preserved.
+- Directory names may contain spaces or be blank. The writer rewrites a name
+  only when the edited name differs from the decoded one, so unchanged names
+  survive byte-for-byte.
+- Open question: directory byte `10 + 10*i` (just before each slot name) is
+  `0x01` for exactly the occupied slots in `ME.ME1` and `OFFICIAL.ME1`, but
+  `EMMAUS.ME1` has occupied slots with `0x00`. The writer leaves it untouched
+  for imported files and sets `0x01` for every slot, empty or not, in new
+  configurations. Whether the ME-1 reads it is unverified on hardware.
+
 ## Assignment and name flags
 
 - `0x08`: key muted.
@@ -44,5 +61,5 @@ not a replacement for them.
 
 Any format change must preserve 4096-byte output, 16 keys, 40 sources, and
 unknown-byte preservation. Validate against both preset and configuration
-fixtures and add focused executable round-trip tests; the active static smoke
-test is not sufficient format coverage.
+fixtures and extend [`tests/me1-format.test.mjs`](../tests/me1-format.test.mjs),
+which runs the real format module against the `Configs/` fixtures.

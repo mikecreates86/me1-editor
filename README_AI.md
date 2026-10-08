@@ -79,11 +79,9 @@ files remain only as inactive legacy scaffold files.
   original generic loading-skeleton starter. It is obsolete and excluded from
   the active test command.
 - As of 2026-09-17, `npm run lint`, `npm run build`, and `npm test` pass.
-  The active tests are smoke tests, not comprehensive binary round-trip
-  coverage.
-- There are no focused unit tests for `parseME1`, `writeME1`, round-tripping,
-  or hardware compatibility. The checked-in fixtures are available for adding
-  those tests.
+  `tests/me1-format.test.mjs` runs parser/writer round trips against the
+  fixtures; `npm run typecheck` checks the deployed entry graph.
+- There are no hardware-compatibility tests.
 - The UI currently supports importing `.ME1` files but not importing its saved
   `.me1draft.json` format, despite offering draft export.
 

@@ -39,10 +39,14 @@ npm run build
 npm run preview
 npm test
 npm run lint
+npm run typecheck
 npm run db:generate
 ```
 
-`npm test` runs the static Vite build first, then `tests/static-app.test.mjs`.
+`npm test` runs the static Vite build first, then `tests/static-app.test.mjs`
+and `tests/me1-format.test.mjs` (fixture-based format round trips).
+`npm run typecheck` runs `tsc` over the deployed entry graph only; Vite does not
+typecheck.
 `npm run db:generate` is only relevant when intentionally adding D1 schema.
 If a command is unavailable, verify dependencies are installed before changing
 configuration. Report failures accurately; do not claim a successful build or
@@ -96,14 +100,14 @@ runs the same lint and test checks on pushes and pull requests to `main`.
   the task explicitly changes the format contract.
 - Read [`docs/me1-format.md`](docs/me1-format.md) for the authoritative
   implementation notes before changing binary logic.
-- When changing format behavior, add focused round-trip tests using fixtures
-  under `Configs/` before relying on the stale starter test.
+- When changing format behavior, extend `tests/me1-format.test.mjs` with
+  focused round-trip tests using fixtures under `Configs/`.
 
 ## Verification checklist
 
 After code changes:
 
-1. Run `npm run lint` and `npm run build`.
+1. Run `npm run lint`, `npm run typecheck`, and `npm run build`.
 2. Run `npm test`, but distinguish stale-test failures from regressions.
 3. For format changes, test 4 KB and 72 KB imports, export size, filename
    constraints, and unchanged-byte preservation.

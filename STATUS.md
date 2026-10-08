@@ -14,6 +14,11 @@ the complete handoff.
 
 ## Recently Completed
 
+- 2026-10-08 audit: added executable fixture tests for the format module and an
+  `npm run typecheck` CI step; fixed configuration export rewriting unchanged
+  directory names (e.g. `ALEX PRZ` → `ALEXPRZ`, blank → `P4`); export now
+  offers to save unsaved slot edits instead of silently dropping them.
+
 - Audited the repository and Git history for a portable handoff.
 - Verified a clean lockfile install, lint, Vite production build, and all four
   active smoke tests.
@@ -36,18 +41,17 @@ the complete handoff.
 
 - `tests/rendered-html.test.mjs` remains obsolete starter coverage and is not in
   the active `npm test` script.
-- There are no focused parser/writer round-trip or hardware-compatibility tests.
+- There are no hardware-compatibility tests. `tests/me1-format.test.mjs`
+  covers parser/writer round trips against the fixtures.
 - Editor drafts can be exported but not imported.
-- Unsaved configuration-slot edits are omitted if the user exports the
-  configuration before choosing `SAVE & RETURN`.
+- The directory slot flag byte's meaning is unverified on hardware; see
+  `docs/me1-format.md`.
 - The old Vinext/Cloudflare files remain in the tree as inactive scaffold files;
   future changes should use the static Vite entry unless explicitly migrating
   or deleting the scaffold.
 
 ## Next Steps
 
-- Replace the stale starter test with focused tests for 4 KB/72 KB parsing,
-  export size, round-tripping, and preservation of unknown bytes.
 - Validate generated files on physical hardware and record ME-1 firmware.
 - Verify the Vercel deployment and static output.
 - Run the app manually and verify import, editing, group/mute behavior, draft
