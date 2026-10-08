@@ -18,6 +18,8 @@ the complete handoff.
   `npm run typecheck` CI step; fixed configuration export rewriting unchanged
   directory names (e.g. `ALEX PRZ` → `ALEXPRZ`, blank → `P4`); export now
   offers to save unsaved slot edits instead of silently dropping them.
+- 2026-10-08: removed the inactive Vinext/Cloudflare/D1 starter scaffold and its
+  dependencies; lint and typecheck now cover the whole project.
 
 - Audited the repository and Git history for a portable handoff.
 - Verified a clean lockfile install, lint, Vite production build, and all four
@@ -39,16 +41,11 @@ the complete handoff.
 
 ## Known Issues
 
-- `tests/rendered-html.test.mjs` remains obsolete starter coverage and is not in
-  the active `npm test` script.
 - There are no hardware-compatibility tests. `tests/me1-format.test.mjs`
   covers parser/writer round trips against the fixtures.
 - Editor drafts can be exported but not imported.
 - The directory slot flag byte's meaning is unverified on hardware; see
   `docs/me1-format.md`.
-- The old Vinext/Cloudflare files remain in the tree as inactive scaffold files;
-  future changes should use the static Vite entry unless explicitly migrating
-  or deleting the scaffold.
 
 ## Next Steps
 
